@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>O-Lab Editor — ¿Cómo auditar una bodega?</title>
+  <meta name="description" content="Maqueta interactiva del editor de simulaciones de O-Lab" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23F97316'/%3E%3Ctext x='16' y='22' font-size='16' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='bold'%3EO%3C/text%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       BIBLIOTECA DE AVATARES (símbolos SVG reutilizables)
+       Se usan tanto en el panel "Tutores" como en el canvas.
+       ══════════════════════════════════════════════════════════════ -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <!-- Jaime: tutor de bodega con casco y chaleco reflectivo -->
+      <symbol id="char-jaime" viewBox="0 0 160 230">
+        <ellipse cx="30" cy="180" rx="13" ry="40" fill="#334155"/>
+        <ellipse cx="130" cy="180" rx="13" ry="40" fill="#334155"/>
+        <circle cx="30" cy="216" r="9" fill="#E8B08C"/>
+        <circle cx="130" cy="216" r="9" fill="#E8B08C"/>
+        <path d="M28 230 C28 152 50 132 80 132 C110 132 132 152 132 230 Z" fill="#334155"/>
+        <path d="M40 230 C40 160 56 138 80 138 C104 138 120 160 120 230 Z" fill="#F59E0B"/>
+        <rect x="77" y="140" width="6" height="90" fill="#334155"/>
+        <rect x="44" y="186" width="72" height="9" fill="#E2E8F0" opacity="0.9"/>
+        <rect x="72" y="112" width="16" height="18" fill="#E8B08C"/>
+        <circle cx="80" cy="86" r="32" fill="#E8B08C"/>
+        <circle cx="47" cy="90" r="5" fill="#E8B08C"/>
+        <circle cx="113" cy="90" r="5" fill="#E8B08C"/>
+        <path d="M46 80 C46 56 60 44 80 44 C100 44 114 56 114 80 Z" fill="#F97316"/>
+        <rect x="40" y="76" width="80" height="10" rx="5" fill="#EA580C"/>
+        <rect x="73" y="44" width="14" height="8" rx="4" fill="#EA580C"/>
+        <circle cx="68" cy="92" r="3.5" fill="#0F172A"/>
+        <circle cx="92" cy="92" r="3.5" fill="#0F172A"/>
+        <path d="M62 84 Q68 81 73 84" stroke="#0F172A" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <path d="M87 84 Q92 81 98 84" stroke="#0F172A" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <path d="M69 102 Q80 111 91 102" stroke="#0F172A" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <circle cx="60" cy="100" r="4" fill="#F97316" opacity="0.25"/>
+        <circle cx="100" cy="100" r="4" fill="#F97316" opacity="0.25"/>
+      </symbol>
+
+      <!-- Lola: tutora de tienda / retail -->
+      <symbol id="char-lola" viewBox="0 0 160 230">
+        <ellipse cx="30" cy="180" rx="13" ry="40" fill="#0D9488"/>
+        <ellipse cx="130" cy="180" rx="13" ry="40" fill="#0D9488"/>
+        <circle cx="30" cy="216" r="9" fill="#C68642"/>
+        <circle cx="130" cy="216" r="9" fill="#C68642"/>
+        <path d="M28 230 C28 152 50 132 80 132 C110 132 132 152 132 230 Z" fill="#0D9488"/>
+        <path d="M68 134 L80 150 L92 134 Q80 128 68 134 Z" fill="#F8FAFC"/>
+        <rect x="71" y="164" width="18" height="24" rx="3" fill="#F8FAFC"/>
+        <rect x="74" y="170" width="12" height="3" rx="1.5" fill="#94A3B8"/>
+        <rect x="74" y="176" width="9" height="3" rx="1.5" fill="#CBD5E1"/>
+        <rect x="72" y="112" width="16" height="18" fill="#C68642"/>
+        <circle cx="48" cy="54" r="11" fill="#3B2219"/>
+        <circle cx="112" cy="54" r="11" fill="#3B2219"/>
+        <circle cx="80" cy="80" r="36" fill="#3B2219"/>
+        <circle cx="80" cy="90" r="30" fill="#C68642"/>
+        <path d="M50 84 C50 60 64 50 80 50 C96 50 110 60 110 84 C104 68 94 64 80 64 C66 64 56 68 50 84 Z" fill="#3B2219"/>
+        <circle cx="68" cy="94" r="3.5" fill="#0F172A"/>
+        <circle cx="92" cy="94" r="3.5" fill="#0F172A"/>
+        <path d="M62 86 Q68 83 73 86" stroke="#0F172A" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <path d="M87 86 Q92 83 98 86" stroke="#0F172A" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <path d="M70 104 Q80 112 90 104" stroke="#0F172A" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <circle cx="61" cy="102" r="4" fill="#F97316" opacity="0.3"/>
+        <circle cx="99" cy="102" r="4" fill="#F97316" opacity="0.3"/>
+      </symbol>
+
+      <!-- Andrés: tutor ejecutivo / corporativo -->
+      <symbol id="char-ejecutivo" viewBox="0 0 160 230">
+        <ellipse cx="30" cy="180" rx="13" ry="40" fill="#1E3A8A"/>
+        <ellipse cx="130" cy="180" rx="13" ry="40" fill="#1E3A8A"/>
+        <circle cx="30" cy="216" r="9" fill="#F1C27D"/>
+        <circle cx="130" cy="216" r="9" fill="#F1C27D"/>
+        <path d="M28 230 C28 152 50 132 80 132 C110 132 132 152 132 230 Z" fill="#1E3A8A"/>
+        <path d="M62 136 L80 178 L98 136 Q80 128 62 136 Z" fill="#FFFFFF"/>
+        <path d="M75 138 L85 138 L88 152 L80 186 L72 152 Z" fill="#F97316"/>
+        <path d="M62 136 L80 178 L56 160 Z" fill="#172554"/>
+        <path d="M98 136 L80 178 L104 160 Z" fill="#172554"/>
+        <rect x="72" y="112" width="16" height="18" fill="#F1C27D"/>
+        <circle cx="80" cy="78" r="33" fill="#1F2937"/>
+        <circle cx="80" cy="90" r="30" fill="#F1C27D"/>
+        <path d="M50 86 C50 62 63 52 80 52 C97 52 110 62 110 86 C103 70 93 66 80 66 C67 66 57 70 50 86 Z" fill="#1F2937"/>
+        <circle cx="68" cy="94" r="3.5" fill="#0F172A"/>
+        <circle cx="92" cy="94" r="3.5" fill="#0F172A"/>
+        <path d="M62 86 Q68 83 73 86" stroke="#0F172A" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <path d="M87 86 Q92 83 98 86" stroke="#0F172A" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <path d="M71 104 Q80 111 89 104" stroke="#0F172A" stroke-width="3" fill="none" stroke-linecap="round"/>
+      </symbol>
+
+      <!-- Valentina: tutora del área de salud -->
+      <symbol id="char-doctora" viewBox="0 0 160 230">
+        <ellipse cx="30" cy="180" rx="13" ry="40" fill="#F8FAFC"/>
+        <ellipse cx="130" cy="180" rx="13" ry="40" fill="#F8FAFC"/>
+        <circle cx="30" cy="216" r="9" fill="#E0AC69"/>
+        <circle cx="130" cy="216" r="9" fill="#E0AC69"/>
+        <path d="M28 230 C28 152 50 132 80 132 C110 132 132 152 132 230 Z" fill="#F8FAFC"/>
+        <path d="M64 134 L80 160 L96 134 Q80 127 64 134 Z" fill="#0EA5E9"/>
+        <path d="M62 134 L80 230 L46 230 C46 172 50 146 62 134 Z" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="2"/>
+        <path d="M98 134 L80 230 L114 230 C114 172 110 146 98 134 Z" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="2"/>
+        <path d="M67 136 C67 158 93 158 93 136" stroke="#475569" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+        <path d="M80 153 L80 164" stroke="#475569" stroke-width="3.5" stroke-linecap="round"/>
+        <circle cx="80" cy="171" r="7" fill="#475569"/>
+        <circle cx="80" cy="171" r="3" fill="#CBD5E1"/>
+        <rect x="72" y="112" width="16" height="18" fill="#E0AC69"/>
+        <circle cx="80" cy="44" r="10" fill="#4B3621"/>
+        <circle cx="80" cy="78" r="34" fill="#4B3621"/>
+        <circle cx="80" cy="90" r="30" fill="#E0AC69"/>
+        <path d="M50 86 C50 62 63 52 80 52 C97 52 110 62 110 86 C103 70 93 66 80 66 C67 66 57 70 50 86 Z" fill="#4B3621"/>
+        <circle cx="68" cy="94" r="3.5" fill="#0F172A"/>
+        <circle cx="92" cy="94" r="3.5" fill="#0F172A"/>
+        <path d="M62 86 Q68 83 73 86" stroke="#0F172A" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <path d="M87 86 Q92 83 98 86" stroke="#0F172A" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <path d="M70 104 Q80 112 90 104" stroke="#0F172A" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <circle cx="61" cy="102" r="4" fill="#F97316" opacity="0.25"/>
+        <circle cx="99" cy="102" r="4" fill="#F97316" opacity="0.25"/>
+      </symbol>
+    </defs>
+  </svg>
+
+  <div class="app">
+
+    <!-- ══════════════════════════════════════════════════════════════
+         ZONA A · HEADER (56px, fijo arriba)
+         Navegación, nombre editable, guardado, vista previa y publicar
+         ══════════════════════════════════════════════════════════════ -->
+    <header class="app-header">
+      <div class="header-left">
+        <button class="btn btn-ghost" id="btnBack" data-tip="Volver a tus proyectos" data-tip-pos="bottom">
+          <span aria-hidden="true">←</span> Mis proyectos
+        </button>
+        <span class="header-divider" aria-hidden="true"></span>
+        <div class="project-name-wrap">
+          <h1 class="project-name" id="projectName" title="Haz clic para renombrar">¿Cómo auditar una bodega?</h1>
+          <button class="icon-btn" id="btnRename" data-tip="Renombrar proyecto" data-tip-pos="bottom" aria-label="Renombrar proyecto">
+            <svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M13.5 3.5l3 3L7 16H4v-3z"/><path d="M11.5 5.5l3 3"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="header-center">
+        <span class="save-indicator" id="saveIndicator" role="status">Guardado automáticamente · hace 2 min</span>
+      </div>
+
+      <div class="header-right">
+        <button class="btn btn-secondary" id="btnPreview" data-tip="Ver el curso como lo verá tu equipo" data-tip-pos="bottom">
+          <span aria-hidden="true">▶</span> Vista previa
+        </button>
+        <button class="btn btn-primary" id="btnPublish" data-tip="Comparte tu curso en un canal" data-tip-pos="bottom">
+          Publicar <span aria-hidden="true">↗</span>
+        </button>
+      </div>
+    </header>
+
+    <div class="app-body">
+
+      <!-- ══════════════════════════════════════════════════════════════
+           ZONA B · PANEL "AGREGAR" (izquierda, 320px)
+           Rail de 5 tabs con icono + etiqueta, y contenido por tab
+           ══════════════════════════════════════════════════════════════ -->
+      <aside class="add-panel" aria-label="Agregar contenido">
+        <nav class="add-rail" role="tablist" aria-label="Categorías de contenido">
+          <button class="rail-tab active" role="tab" aria-selected="true" data-tab="escenarios" id="railtab-escenarios" aria-controls="tab-escenarios">
+            <span class="rail-icon" aria-hidden="true">🎭</span><span class="rail-label">Escenarios</span>
+          </button>
+          <button class="rail-tab" role="tab" aria-selected="false" data-tab="tutores" id="railtab-tutores" aria-controls="tab-tutores">
+            <span class="rail-icon" aria-hidden="true">🧑</span><span class="rail-label">Tutores</span>
+          </button>
+          <button class="rail-tab" role="tab" aria-selected="false" data-tab="interacciones" id="railtab-interacciones" aria-controls="tab-interacciones">
+            <span class="rail-icon" aria-hidden="true">💬</span><span class="rail-label">Interacciones</span>
+          </button>
+          <button class="rail-tab" role="tab" aria-selected="false" data-tab="media" id="railtab-media" aria-controls="tab-media">
+            <span class="rail-icon" aria-hidden="true">🖼</span><span class="rail-label">Media</span>
+          </button>
+          <button class="rail-tab" role="tab" aria-selected="false" data-tab="ia" id="railtab-ia" aria-controls="tab-ia">
+            <span class="rail-icon" aria-hidden="true">✨</span><span class="rail-label">IA</span>
+          </button>
+        </nav>
+
+        <div class="add-content">
+
+          <!-- Tab 1 · Escenarios -->
+          <section class="tab-pane active" id="tab-escenarios" role="tabpanel" aria-labelledby="railtab-escenarios">
+            <h2 class="pane-title">Escenarios</h2>
+            <p class="pane-hint">Elige el lugar donde ocurre tu escena.</p>
+            <div class="thumb-grid">
+              <button class="thumb-item" data-add="escenario" data-bg="bodega">
+                <span class="thumb bg-bodega" aria-hidden="true"></span><span class="thumb-name">Bodega</span>
+              </button>
+              <button class="thumb-item" data-add="escenario" data-bg="oficina">
+                <span class="thumb bg-oficina" aria-hidden="true"></span><span class="thumb-name">Oficina</span>
+              </button>
+              <button class="thumb-item" data-add="escenario" data-bg="tienda">
+                <span class="thumb bg-tienda" aria-hidden="true"></span><span class="thumb-name">Tienda</span>
+              </button>
+              <button class="thumb-item" data-add="escenario" data-bg="fabrica">
+                <span class="thumb bg-fabrica" aria-hidden="true"></span><span class="thumb-name">Fábrica</span>
+              </button>
+            </div>
+          </section>
+
+          <!-- Tab 2 · Tutores -->
+          <section class="tab-pane" id="tab-tutores" role="tabpanel" aria-labelledby="railtab-tutores" hidden>
+            <h2 class="pane-title">Tutores</h2>
+            <p class="pane-hint">Quien guía a tu equipo durante la simulación.</p>
+            <div class="thumb-grid">
+              <button class="thumb-item" data-add="tutor" data-tutor="jaime">
+                <span class="avatar-thumb" aria-hidden="true">
+                  <svg viewBox="32 28 96 96"><use href="#char-jaime" width="160" height="230"/></svg>
+                </span><span class="thumb-name">Jaime</span>
+              </button>
+              <button class="thumb-item" data-add="tutor" data-tutor="lola">
+                <span class="avatar-thumb" aria-hidden="true">
+                  <svg viewBox="32 28 96 96"><use href="#char-lola" width="160" height="230"/></svg>
+                </span><span class="thumb-name">Lola</span>
+              </button>
+              <button class="thumb-item" data-add="tutor" data-tutor="ejecutivo">
+                <span class="avatar-thumb" aria-hidden="true">
+                  <svg viewBox="32 28 96 96"><use href="#char-ejecutivo" width="160" height="230"/></svg>
+                </span><span class="thumb-name">Andrés</span>
+              </button>
+              <button class="thumb-item" data-add="tutor" data-tutor="doctora">
+                <span class="avatar-thumb" aria-hidden="true">
+                  <svg viewBox="32 28 96 96"><use href="#char-doctora" width="160" height="230"/></svg>
+                </span><span class="thumb-name">Valentina</span>
+              </button>
+            </div>
+          </section>
+
+          <!-- Tab 3 · Interacciones -->
+          <section class="tab-pane" id="tab-interacciones" role="tabpanel" aria-labelledby="railtab-interacciones" hidden>
+            <h2 class="pane-title">Interacciones</h2>
+            <p class="pane-hint">Así participa tu equipo en la escena.</p>
+            <div class="card-list">
+              <button class="int-card" data-add="interaccion" data-int="dialogo">
+                <span class="int-icon" aria-hidden="true">💬</span>
+                <span class="int-body"><span class="int-title">Diálogo</span>
+                <span class="int-desc">El tutor conversa con el participante.</span></span>
+              </button>
+              <button class="int-card" data-add="interaccion" data-int="quiz">
+                <span class="int-icon" aria-hidden="true">✅</span>
+                <span class="int-body"><span class="int-title">Pregunta de opción múltiple</span>
+                <span class="int-desc">Evalúa con opciones y retroalimentación.</span></span>
+              </button>
+              <button class="int-card" data-add="interaccion" data-int="decision">
+                <span class="int-icon" aria-hidden="true">🔀</span>
+                <span class="int-body"><span class="int-title">Decisión ramificada</span>
+                <span class="int-desc">Cada elección lleva a un camino distinto.</span></span>
+              </button>
+              <button class="int-card" data-add="interaccion" data-int="dragdrop">
+                <span class="int-icon" aria-hidden="true">✋</span>
+                <span class="int-body"><span class="int-title">Arrastrar y soltar</span>
+                <span class="int-desc">Clasifica u ordena elementos en pantalla.</span></span>
+              </button>
+            </div>
+          </section>
+
+          <!-- Tab 4 · Media -->
+          <section class="tab-pane" id="tab-media" role="tabpanel" aria-labelledby="railtab-media" hidden>
+            <h2 class="pane-title">Media</h2>
+            <div class="media-search">
+              <svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+                <circle cx="9" cy="9" r="5.5"/><path d="M13.5 13.5L17 17"/>
+              </svg>
+              <input type="search" id="mediaSearch" placeholder="Buscar en tu biblioteca…" aria-label="Buscar media" />
+            </div>
+            <div class="media-tabs" role="tablist" aria-label="Tipos de media">
+              <button class="media-tab active" data-mtab="imagenes" role="tab" aria-selected="true">Imágenes</button>
+              <button class="media-tab" data-mtab="audio" role="tab" aria-selected="false">Audio</button>
+              <button class="media-tab" data-mtab="video" role="tab" aria-selected="false">Video</button>
+              <button class="media-tab" data-mtab="docs" role="tab" aria-selected="false">Documentos</button>
+            </div>
+
+            <div class="media-pane active" id="mpane-imagenes">
+              <div class="thumb-grid" id="mediaImagesGrid">
+                <button class="thumb-item media-item" data-add="media" data-name="Bodega pasillo A"><span class="thumb m-img m1" aria-hidden="true"></span><span class="thumb-name">Bodega pasillo A</span></button>
+                <button class="thumb-item media-item" data-add="media" data-name="Estantería alta"><span class="thumb m-img m2" aria-hidden="true"></span><span class="thumb-name">Estantería alta</span></button>
+                <button class="thumb-item media-item" data-add="media" data-name="Casco y EPP"><span class="thumb m-img m3" aria-hidden="true"></span><span class="thumb-name">Casco y EPP</span></button>
+                <button class="thumb-item media-item" data-add="media" data-name="Zona de carga"><span class="thumb m-img m4" aria-hidden="true"></span><span class="thumb-name">Zona de carga</span></button>
+                <button class="thumb-item media-item" data-add="media" data-name="Extintor"><span class="thumb m-img m5" aria-hidden="true"></span><span class="thumb-name">Extintor</span></button>
+                <button class="thumb-item media-item" data-add="media" data-name="Señalización"><span class="thumb m-img m6" aria-hidden="true"></span><span class="thumb-name">Señalización</span></button>
+              </div>
+            </div>
+            <div class="media-pane" id="mpane-audio" hidden>
+              <button class="media-row media-item" data-add="media" data-name="Intro de Jaime"><span class="media-row-icon" aria-hidden="true">🎧</span><span class="media-row-name">Intro de Jaime</span><span class="media-row-meta">0:12</span></button>
+              <button class="media-row media-item" data-add="media" data-name="Ambiente bodega"><span class="media-row-icon" aria-hidden="true">🎧</span><span class="media-row-name">Ambiente bodega</span><span class="media-row-meta">1:04</span></button>
+              <button class="media-row media-item" data-add="media" data-name="Alarma montacargas"><span class="media-row-icon" aria-hidden="true">🎧</span><span class="media-row-name">Alarma montacargas</span><span class="media-row-meta">0:06</span></button>
+            </div>
+            <div class="media-pane" id="mpane-video" hidden>
+              <div class="thumb-grid">
+                <button class="thumb-item media-item" data-add="media" data-name="Recorrido bodega"><span class="thumb m-img m2 video-thumb" aria-hidden="true"><span class="play-badge">▶</span></span><span class="thumb-name">Recorrido bodega</span></button>
+                <button class="thumb-item media-item" data-add="media" data-name="Uso del montacargas"><span class="thumb m-img m4 video-thumb" aria-hidden="true"><span class="play-badge">▶</span></span><span class="thumb-name">Uso del montacargas</span></button>
+              </div>
+            </div>
+            <div class="media-pane" id="mpane-docs" hidden>
+              <button class="media-row media-item" data-add="media" data-name="Checklist de auditoría"><span class="media-row-icon" aria-hidden="true">📄</span><span class="media-row-name">Checklist de auditoría.pdf</span><span class="media-row-meta">2 MB</span></button>
+              <button class="media-row media-item" data-add="media" data-name="Norma de seguridad"><span class="media-row-icon" aria-hidden="true">📄</span><span class="media-row-name">Norma de seguridad.pdf</span><span class="media-row-meta">1 MB</span></button>
+            </div>
+          </section>
+
+          <!-- Tab 5 · IA -->
+          <section class="tab-pane" id="tab-ia" role="tabpanel" aria-labelledby="railtab-ia" hidden>
+            <h2 class="pane-title">✨ Crea con IA</h2>
+            <p class="pane-hint">Genera escenas, guiones e imágenes con IA. Describe lo que necesitas y el asistente lo prepara por ti.</p>
+            <div class="ia-examples">
+              <p class="ia-example">“Crea una escena donde Jaime explique la revisión de extintores”</p>
+              <p class="ia-example">“Genera una imagen de una bodega ordenada”</p>
+            </div>
+            <button class="btn btn-primary btn-block" id="btnOpenCopilotFromTab">✨ Abrir asistente</button>
+          </section>
+
+        </div>
+      </aside>
+
+      <!-- ══════════════════════════════════════════════════════════════
+           ZONA C · CANVAS (centro, protagonista)
+           La escena en edición: fondo, tutor, diálogo y toolbar contextual
+           ══════════════════════════════════════════════════════════════ -->
+      <main class="canvas-area" id="canvasArea">
+        <div class="scene-chip" id="sceneChip">Escena 1 · Bienvenida</div>
+
+        <div class="stage-wrap">
+          <div class="stage bg-bodega" id="stage">
+
+            <!-- Tutor en escena (seleccionable) -->
+            <button class="stage-avatar selectable" id="stageAvatar" data-el="avatar" aria-label="Tutor de la escena. Clic para seleccionar">
+              <svg viewBox="0 0 160 230" aria-hidden="true"><use id="stageAvatarUse" href="#char-jaime"/></svg>
+            </button>
+
+            <!-- Tarjeta de diálogo (seleccionable, texto editable inline) -->
+            <div class="dialog-card selectable" id="dialogCard" data-el="dialog" tabindex="0" aria-label="Diálogo del tutor. Clic para seleccionar">
+              <p class="dialog-speaker" id="dialogSpeaker">Jaime</p>
+              <p class="dialog-text" id="dialogText" title="Haz clic para editar el texto">¡Hola! Qué bueno verte por acá. Bienvenido a la bodega. Hoy te toca ser el líder operativo, así que vamos a darle con todo.</p>
+              <div class="dialog-actions">
+                <button class="btn btn-primary dialog-btn selectable" id="dialogBtn" data-el="button">Continuar</button>
+              </div>
+            </div>
+
+            <!-- Estado vacío para escenas sin contenido -->
+            <div class="stage-empty" id="stageEmpty" hidden>
+              <span class="stage-empty-icon" aria-hidden="true">⚠</span>
+              <p class="stage-empty-title">Esta escena aún no tiene contenido</p>
+              <p class="stage-empty-hint">Agrega una interacción desde el panel izquierdo o pídesela al asistente.</p>
+              <button class="btn btn-secondary" id="btnEmptyAdd">+ Agregar interacción</button>
+            </div>
+
+            <!-- Toolbar contextual flotante (se posiciona por JS) -->
+            <div class="ctx-toolbar" id="ctxToolbar" role="toolbar" aria-label="Acciones del elemento seleccionado" hidden></div>
+          </div>
+        </div>
+      </main>
+
+      <!-- ══════════════════════════════════════════════════════════════
+           ZONA D · PANEL DE PROPIEDADES (derecha, 300px, colapsado)
+           Solo se abre al seleccionar un elemento del canvas
+           ══════════════════════════════════════════════════════════════ -->
+      <aside class="props-panel" id="propsPanel" aria-label="Propiedades del elemento" aria-hidden="true">
+        <div class="props-inner">
+          <div class="props-header">
+            <h2 class="props-title" id="propsTitle">Propiedades</h2>
+            <button class="icon-btn" id="btnCloseProps" aria-label="Cerrar panel de propiedades">
+              <svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15"/></svg>
+            </button>
+          </div>
+          <div class="props-body" id="propsBody"><!-- contenido según selección (JS) --></div>
+          <div class="props-advanced">
+            <button class="accordion-toggle" id="advToggle" aria-expanded="false" aria-controls="advContent">
+              Configuración avanzada
+              <svg class="chevron" viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8l4 4 4-4"/></svg>
+            </button>
+            <div class="accordion-content" id="advContent" hidden>
+              <label class="field"><span class="field-label">Identificador de escena</span>
+                <input type="text" value="esc_bienvenida_01" disabled /></label>
+              <label class="field"><span class="field-label">Condición de visibilidad</span>
+                <input type="text" value="Siempre visible" disabled /></label>
+              <label class="field"><span class="field-label">Variable de progreso</span>
+                <input type="text" value="progreso_auditoria" disabled /></label>
+              <p class="field-note">Estas opciones se configuran al conectar tu LMS.</p>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════
+         ZONA E · TIMELINE DE ESCENAS (abajo, 96px, fija)
+         Miniaturas con nombre completo + estado de completitud
+         ══════════════════════════════════════════════════════════════ -->
+    <footer class="timeline" aria-label="Línea de tiempo de escenas">
+      <div class="timeline-scroll" id="timelineScroll"><!-- tarjetas de escena (JS) --></div>
+      <button class="btn-add-scene" id="btnAddScene">+ Agregar escena</button>
+    </footer>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       ✨ COPILOTO IA — único punto de entrada de IA
+       ══════════════════════════════════════════════════════════════ -->
+  <button class="copilot-fab" id="copilotFab" data-tip="Asistente O-Lab" aria-label="Abrir el asistente O-Lab" aria-expanded="false">✨</button>
+
+  <section class="copilot-panel" id="copilotPanel" aria-label="Asistente O-Lab" hidden>
+    <header class="copilot-header">
+      <span class="copilot-title"><span aria-hidden="true">✨</span> Asistente O-Lab</span>
+      <button class="icon-btn on-dark" id="btnCloseCopilot" aria-label="Cerrar asistente">
+        <svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15"/></svg>
+      </button>
+    </header>
+    <div class="copilot-context-row">
+      <span class="copilot-context" id="copilotContext">Contexto: Escena 1 — Bienvenida</span>
+    </div>
+    <div class="copilot-messages" id="copilotMessages" aria-live="polite"></div>
+    <div class="copilot-chips" id="copilotChips">
+      <button class="chip" data-chip>Reescribe el diálogo más motivador</button>
+      <button class="chip" data-chip>Genera una imagen de bodega</button>
+      <button class="chip" data-chip>Crea una escena de quiz sobre montacargas</button>
+    </div>
+    <form class="copilot-form" id="copilotForm">
+      <input type="text" id="copilotInput" placeholder="Pídele algo al asistente…" autocomplete="off" aria-label="Escribe tu pedido al asistente" />
+      <button type="submit" class="copilot-send" id="copilotSend" aria-label="Enviar" disabled>
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+      </button>
+    </form>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       MODAL DE PUBLICACIÓN (Zona A · botón "Publicar")
+       ══════════════════════════════════════════════════════════════ -->
+  <div class="modal-backdrop" id="publishModal" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="publishTitle">
+      <div class="modal-header">
+        <div>
+          <h2 class="modal-title" id="publishTitle">Publicar curso</h2>
+          <p class="modal-subtitle">“<span id="publishProjectName">¿Cómo auditar una bodega?</span>” quedará disponible para tu equipo.</p>
+        </div>
+        <button class="icon-btn" id="btnCloseModal" aria-label="Cerrar">
+          <svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15"/></svg>
+        </button>
+      </div>
+
+      <p class="modal-section-label">Elige el canal</p>
+      <div class="channel-grid" id="channelGrid">
+        <button class="channel-card active" data-channel="web">
+          <span class="channel-icon" aria-hidden="true">🌐</span>
+          <span class="channel-name">Web</span>
+          <span class="channel-desc">Un link listo para compartir</span>
+        </button>
+        <button class="channel-card" data-channel="whatsapp">
+          <span class="channel-icon" aria-hidden="true">💬</span>
+          <span class="channel-name">WhatsApp</span>
+          <span class="channel-desc">Envía el curso por chat</span>
+        </button>
+        <button class="channel-card" data-channel="lms">
+          <span class="channel-icon" aria-hidden="true">🎓</span>
+          <span class="channel-name">LMS</span>
+          <span class="channel-desc">Exporta a tu plataforma (SCORM)</span>
+        </button>
+        <button class="channel-card" data-channel="qr">
+          <span class="channel-icon" aria-hidden="true">▦</span>
+          <span class="channel-name">Código QR</span>
+          <span class="channel-desc">Ideal para espacios físicos</span>
+        </button>
+      </div>
+
+      <div class="link-row" id="linkRow">
+        <input type="text" id="publishLink" readonly value="https://olab.app/c/como-auditar-una-bodega" aria-label="Link del curso" />
+        <button class="btn btn-secondary" id="btnCopyLink">Copiar</button>
+      </div>
+
+      <div class="qr-block" id="qrBlock" hidden>
+        <div class="qr-box" id="qrBox" aria-label="Código QR del curso"></div>
+        <p class="qr-caption">Escanéalo para abrir el curso. También puedes descargarlo e imprimirlo.</p>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-ghost" id="btnCancelPublish">Cancelar</button>
+        <button class="btn btn-primary" id="btnPublishNow">Publicar ahora</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       VISTA PREVIA (Zona A · botón "Vista previa")
+       ══════════════════════════════════════════════════════════════ -->
+  <div class="preview-overlay" id="previewOverlay" hidden>
+    <div class="preview-topbar">
+      <span class="preview-title">▶ Vista previa</span>
+      <span class="preview-counter" id="previewCounter">Escena 1 de 6</span>
+      <button class="icon-btn on-dark" id="btnClosePreview" aria-label="Cerrar vista previa">
+        <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15"/></svg>
+      </button>
+    </div>
+    <div class="preview-stage-wrap">
+      <div class="stage bg-bodega" id="previewStage">
+        <div class="stage-avatar preview-avatar">
+          <svg viewBox="0 0 160 230" aria-hidden="true"><use id="previewAvatarUse" href="#char-jaime"/></svg>
+        </div>
+        <div class="dialog-card">
+          <p class="dialog-speaker" id="previewSpeaker">Jaime</p>
+          <p class="dialog-text" id="previewText"></p>
+          <div class="dialog-actions">
+            <button class="btn btn-primary" id="previewNext">Continuar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toasts de confirmación (esquina inferior izquierda) -->
+  <div class="toast-stack" id="toastStack" aria-live="polite"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
